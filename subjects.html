@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse by Subject</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="tutors-data.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <a href="index.html" class="back-link">← Home</a>
+    <h1 id="pageTitle">Browse by Subject</h1>
+  </header>
+
+  <main>
+    <div id="status" class="status">Loading subjects…</div>
+
+    <div id="subjectView">
+      <p class="page-intro">Choose a course to see which tutors teach it.</p>
+      <div id="subjectGrid" class="subject-grid"></div>
+    </div>
+
+    <div id="resultsView" class="hidden">
+      <button id="backToSubjects" class="back-link results-back">← All subjects</button>
+      <div id="tutorGrid" class="tutor-grid"></div>
+    </div>
+  </main>
+
+  <script>
+    // Edit this list to match what you offer. "name" must match (case-insensitively)
+    // the text used in the sheet's Subjects column. "code" is just the decorative
+    // course-code label shown on the card.
+    const SUBJECTS = [
+      { name: 'ACT', code: 'ACT' },
+      { name: 'SAT', code: 'SAT' },
+      { name: 'AP Biology', code: 'AP · BIO' },
+      { name: 'AP Chemistry', code: 'AP · CHEM' },
+      { name: 'AP Physics 1', code: 'AP · PHYS 1' },
+      { name: 'AP Physics 2', code: 'AP · PHYS 2' },
+      { name: 'AP Physics C', code: 'AP · PHYS C' },
+      { name: 'AP Calculus AB', code: 'AP · CALC AB' },
+      { name: 'AP Calculus BC', code: 'AP · CALC BC' },
+      { name: 'AP Precalculus', code: 'AP · PRECALC' },
+      { name: 'AP Statistics', code: 'AP · STATS' },
+      { name: 'AP English Language', code: 'AP · LANG' },
+      { name: 'AP English Literature', code: 'AP · LIT' },
+      { name: 'AP US History', code: 'APUSH' },
+      { name: 'AP World History', code: 'WHAP' },
+      { name: 'AP Computer Science A', code: 'AP · CS A' },
+      { name: 'Algebra 1', code: 'ALG 1' },
+      { name: 'Algebra 2', code: 'ALG 2' },
+      { name: 'Geometry', code: 'GEO' }
+    ];
+
+    let allTutors = [];
+
+    function renderSubjectGrid() {
+      const grid = document.getElementById('subjectGrid');
+      grid.innerHTML = '';
+      SUBJECTS.forEach(function (subject) {
+        const btn = document.createElement('button');
+        btn.className = 'subject-btn';
+
+        const code = document.createElement('span');
+        code.className = 'code';
+        code.textContent = subject.code;
+
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = subject.name;
+
+        btn.appendChild(code);
+        btn.appendChild(name);
+        btn.addEventListener('click', function () { showSubject(subject.name); });
+        grid.appendChild(btn);
+      });
+    }
+
+    function showSubject(subject) {
+      const url = new URL(window.location);
+      url.searchParams.set('subject', subject);
+      window.history.pushState({ subject: subject }, '', url);
+      renderResults(subject);
+    }
+
+    function renderResults(subject) {
+      document.getElementById('pageTitle').textContent = 'Tutors for ' + subject;
+      document.getElementById('subjectView').classList.add('hidden');
+      document.getElementById('resultsView').classList.remove('hidden');
+
+      const grid = document.getElementById('tutorGrid');
+      grid.innerHTML = '';
+      const matches = allTutors.filter(function (t) {
+        return t.subjects.some(function (s) { return s.toLowerCase() === subject.toLowerCase(); });
+      });
+
+      if (!matches.length) {
+        const msg = document.createElement('p');
+        msg.className = 'status';
+        msg.innerHTML = 'No tutors are currently listed for ' + subject +
+          '. Check back soon, or <a href="tutors.html">browse all tutors</a>.';
+        grid.appendChild(msg);
+      } else {
+        matches.forEach(function (t) { grid.appendChild(createTutorCard(t)); });
+      }
+    }
+
+    function showSubjectGrid() {
+      const url = new URL(window.location);
+      url.searchParams.delete('subject');
+      window.history.pushState({}, '', url);
+
+      document.getElementById('pageTitle').textContent = 'Browse by Subject';
+      document.getElementById('resultsView').classList.add('hidden');
+      document.getElementById('subjectView').classList.remove('hidden');
+    }
+
+    document.getElementById('backToSubjects').addEventListener('click', showSubjectGrid);
+
+    window.addEventListener('popstate', function () {
+      const params = new URLSearchParams(window.location.search);
+      const subject = params.get('subject');
+      if (subject) { renderResults(subject); } else { showSubjectGrid(); }
+    });
+
+    (async function () {
+      const statusEl = document.getElementById('status');
+      renderSubjectGrid();
+      try {
+        allTutors = await fetchTutors();
+        statusEl.classList.add('hidden');
+        const params = new URLSearchParams(window.location.search);
+        const subject = params.get('subject');
+        if (subject) { renderResults(subject); }
+      } catch (err) {
+        statusEl.textContent = "Couldn't load the tutor list: " + err.message;
+      }
+    })();
+  </script>
+</body>
+</html>

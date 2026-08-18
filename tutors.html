@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meet Your Tutors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="tutors-data.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <a href="index.html" class="back-link">← Home</a>
+    <h1>Meet Your Tutors</h1>
+  </header>
+
+  <main>
+    <p class="page-intro">Every tutor below is ready to book directly — open a card to see their subjects and background.</p>
+    <div id="status" class="status">Loading tutors…</div>
+    <div id="tutorGrid" class="tutor-grid"></div>
+  </main>
+
+  <script>
+    (async function () {
+      const statusEl = document.getElementById('status');
+      const grid = document.getElementById('tutorGrid');
+      try {
+        const tutors = await fetchTutors();
+        statusEl.classList.add('hidden');
+        if (!tutors.length) {
+          statusEl.textContent = 'No tutors are listed yet. Add a row to the Google Sheet to get started.';
+          statusEl.classList.remove('hidden');
+          return;
+        }
+        tutors.forEach(function (t) { grid.appendChild(createTutorCard(t)); });
+      } catch (err) {
+        statusEl.textContent = "Couldn't load the tutor list: " + err.message;
+      }
+    })();
+  </script>
+</body>
+</html>
